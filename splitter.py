@@ -5,7 +5,7 @@ from langchain.docstore.document import Document
 from typing import Any, Iterable, List
 
 
-class LawSplitter(RecursiveCharacterTextSplitter):
+class MdSplitter(RecursiveCharacterTextSplitter):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize a LawSplitter."""
         separators = [r"第\S*条 "]
