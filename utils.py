@@ -1,34 +1,27 @@
 
 ##下面这个可以
-# from typing import List, Dict
-# from collections import defaultdict
+from typing import List, Dict
+from collections import defaultdict
 
-# from langchain.docstore.document import Document
-# from langchain.storage import LocalFileStore
-# from langchain.embeddings import OpenAIEmbeddings, CacheBackedEmbeddings
-# from langchain.indexes import SQLRecordManager, index
-# from langchain.vectorstores import Chroma
-# from langchain.indexes._api import _batch
-# from langchain.chat_models import ChatOpenAI
-# from langchain.callbacks.manager import Callbacks
-
-
-# def get_cached_embedder() -> CacheBackedEmbeddings:
-#     fs = LocalFileStore("./.cache/embeddings")
-#     underlying_embeddings = OpenAIEmbeddings(openai_api_key="sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF",openai_api_base="https://chatapi.littlewheat.com/v1")
-    
-#     cached_embedder = CacheBackedEmbeddings.from_bytes_store(
-#         underlying_embeddings, fs, namespace=underlying_embeddings.model
-#     )
-#     return cached_embedder
-
-# if __name__ == "__main__":
-#     get_cached_embedder()
-
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.embeddings import CacheBackedEmbeddings  # 从 langchain.embeddings 导入
+from langchain.docstore.document import Document
 from langchain.storage import LocalFileStore
-from langchain_chroma import Chroma
+from langchain.embeddings import OpenAIEmbeddings, CacheBackedEmbeddings
+from langchain.indexes import SQLRecordManager, index
+from langchain.vectorstores import Chroma
+from langchain.indexes._api import _batch
+from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.manager import Callbacks
+from langchain_huggingface import HuggingFaceEmbeddings
+
+
+def get_embedder() -> CacheBackedEmbeddings:
+    fs = LocalFileStore("./.cache/embeddings")
+    underlying_embeddings = OpenAIEmbeddings(openai_api_key="sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF",openai_api_base="https://chatapi.littlewheat.com/v1")
+    
+    cached_embedder = CacheBackedEmbeddings.from_bytes_store(
+        underlying_embeddings, fs, namespace=underlying_embeddings.model
+    )
+    return cached_embedder
 
 #这是通过缓存机制加速处理过程的embedder 最初是用在openai的模型上（上面那个），不知道能不能用在bge上 所以有点问题
 def get_cached_embedder1() -> CacheBackedEmbeddings:
@@ -51,7 +44,7 @@ def get_cached_embedder1() -> CacheBackedEmbeddings:
     return cached_embedder
 
 
-def get_embedder():
+def get_embedder1():
     from FlagEmbedding import FlagAutoModel
 
     model = FlagAutoModel.from_finetuned('BAAI/bge-large-zh-v1.5',
@@ -68,7 +61,51 @@ def get_vectorstore(collection_name: str = "law") -> Chroma:
 
     return vectorstore
 
+#创建一个 SQLRecordManager 实例，用于管理向量数据库中的记录
+def get_record_manager(namespace: str = "law") -> SQLRecordManager:
+    return SQLRecordManager(
+        f"chroma/{namespace}", db_url="sqlite:///law_record_manager_cache.sql"
+    )
 
 
+# 清除向量数据库
+def clear_vectorstore(collection_name: str = "law") -> None:
+    record_manager = get_record_manager(collection_name)
+    vectorstore = get_vectorstore(collection_name)
+
+    index([], record_manager, vectorstore, cleanup="full", source_id_key="source")
+
+
+# 将 法律相关文档 批量索引 到向量数据库 并进行 记录管理
+def law_index(docs: List[Document], show_progress: bool = True) -> Dict:
+    info = defaultdict(int)
+
+    record_manager = get_record_manager("law")
+    vectorstore = get_vectorstore("law")
+
+    pbar = None
+    if show_progress:
+        from tqdm import tqdm
+        pbar = tqdm(total=len(docs))
+
+    for docs in _batch(100, docs):
+        result = index(
+            docs,
+            record_manager,
+            vectorstore,
+            cleanup=None,
+            # cleanup="full",
+            source_id_key="source",
+        )
+        for k, v in result.items():
+            info[k] += v
+
+        if pbar:
+            pbar.update(len(docs))
+
+    if pbar:
+        pbar.close()
+
+    return dict(info)
 if __name__ == "__main__":
     get_vectorstore()

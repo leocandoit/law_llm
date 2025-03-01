@@ -1,7 +1,6 @@
 # coding: utf-8
 from typing import Any
-from langchain_community.document_loaders import TextLoader, DirectoryLoader
-
+from langchain.document_loaders import TextLoader, DirectoryLoader
 
 class LawLoader(DirectoryLoader):
     """Load law books."""
