@@ -16,7 +16,7 @@ class LawSplitter(RecursiveCharacterTextSplitter):
             ("##", "header2"),
             ("###", "header3"),
             ("####", "header4"),
-        ]
+        ] 
 
         self.md_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
         super().__init__(separators=separators, is_separator_regex=is_separator_regex, **kwargs)
