@@ -1,5 +1,6 @@
 
 ##下面这个可以
+from pprint import pprint
 from typing import List, Dict
 from collections import defaultdict
 
@@ -12,6 +13,12 @@ from langchain.indexes._api import _batch
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.manager import Callbacks
 from langchain_huggingface import HuggingFaceEmbeddings
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from langchain import HuggingFacePipeline
+
+import os
+os.environ["OPENAI_API_KEY"] = "sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF"
+os.environ["OPENAI_API_BASE"]="https://chatapi.littlewheat.com/v1"
 
 
 def get_embedder() -> CacheBackedEmbeddings:
@@ -107,5 +114,35 @@ def law_index(docs: List[Document], show_progress: bool = True) -> Dict:
         pbar.close()
 
     return dict(info)
+
+
+def get_model(
+        model: str = "gpt-3.5-turbo-0613",
+        streaming: bool = True,
+        callbacks: Callbacks = None) -> ChatOpenAI:
+    model = ChatOpenAI(model=model, streaming=streaming, callbacks=callbacks)
+    return model
+
+
+def get_model1(callbacks: Callbacks = None):
+    tokenizer = AutoTokenizer.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', device_map="cpu", trust_remote_code=True).eval()
+    pipe1 = pipeline(
+        "text2text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_length=512,
+        temperature=0.8,
+        top_p=0.6,
+        repetition_penalty=1.5)
+    
+    llm = HuggingFacePipeline(pipeline=pipe1,callbacks=callbacks)
+    pprint(llm)
+    return llm
+
+
+
+
+
 if __name__ == "__main__":
-    get_vectorstore()
+    get_model()
