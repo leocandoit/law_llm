@@ -14,6 +14,16 @@ def combine_law_docs(docs: List[Document]) -> str:
 
     law_str = ""
     for book, docs in law_books.items():
+        #############下面是新添加的###############
+        # 去重：使用集合存储唯一内容
+        unique_contents = set()
+        for doc in docs:
+            content = doc.page_content.strip("\n")
+            if content:  # 忽略空内容
+                unique_contents.add(content)
+        
+        # 拼接去重后的内容
+        ##############上面是新添加的#############
         law_str += f"相关法律：《{book}》\n"
         law_str += "\n".join([doc.page_content.strip("\n") for doc in docs])
         law_str += "\n"

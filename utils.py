@@ -126,7 +126,7 @@ def get_model(
 
 def get_model1(callbacks: Callbacks = None):
     tokenizer = AutoTokenizer.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', device_map="cpu", trust_remote_code=True).eval()
+    model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', device_map="cuda", trust_remote_code=True).eval()
     pipe1 = pipeline(
         "text2text-generation",
         model=model,

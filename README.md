@@ -57,3 +57,16 @@ class LineListOutputParser(BaseOutputParser):
     
     def parse(self, text: str) -> List[str]:
         return [line for line in text.strip().split("\n") if line.strip()]
+
+但是网络检索没有加,不能联系上下文
+
+
+2025/03/03
+todo：
+1. 补全改写，可能有连续对话 完成
+2. 非口语化改写            完成
+3. 搞清楚callback是啥
+
+2025/03/04
+todo:
+1. 搞清楚提示词是怎么用的 

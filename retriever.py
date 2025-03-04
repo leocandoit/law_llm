@@ -101,6 +101,10 @@ class LineListOutputParser(BaseOutputParser):
         return [line for line in text.strip().split("\n") if line.strip()]
 
 
+
+
+
+
 def get_multi_query_law_retiever(retriever: BaseRetriever, model: BaseModel) -> BaseRetriever:
     """
     多查询检索器
@@ -114,3 +118,36 @@ def get_multi_query_law_retiever(retriever: BaseRetriever, model: BaseModel) -> 
     )
 
     return retriever
+
+
+#############下面是测试####################
+
+class PrintableMultiQueryRetriever(MultiQueryRetriever):
+    def generate_queries(self, query: str, run_manager=None) -> List[str]:
+        """重写查询生成方法并添加打印逻辑"""
+        queries = super().generate_queries(query, run_manager)
+        
+        print("\n=== 多查询生成结果 ===")
+        for i, q in enumerate(queries, 1):
+            print(f"[Query {i}]: {q}")
+        print("======================\n")
+        
+        return queries
+    
+def get_multi_query_law_retiever1(retriever: BaseRetriever, model: BaseModel) -> BaseRetriever:
+    """
+    多查询检索器
+    """
+    output_parser = LineListOutputParser() # 创建输出解析器
+
+    llm_chain = LLMChain(llm=model, prompt=MULTI_QUERY_PROMPT_TEMPLATE, output_parser=output_parser)
+
+    retriever = PrintableMultiQueryRetriever(
+        retriever=retriever, llm_chain=llm_chain, parser_key="lines"
+    )
+
+    return retriever
+
+
+
+#############上面是测试####################

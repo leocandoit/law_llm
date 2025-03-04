@@ -2,13 +2,15 @@
 
 import asyncio
 from pprint import pprint
-from chain import get_check_law_chain, get_law_chain
+
+import torch
+from chain import get_check_law_chain,get_formal_question_chain, get_law_chain
 from config import config
 from loader import LawLoader
-from retriever import LineListOutputParser, get_multi_query_law_retiever
+from retriever import LineListOutputParser, get_multi_query_law_retiever, get_multi_query_law_retiever1
 from splitter import MdSplitter
 from utils import clear_vectorstore, get_model, get_record_manager, get_vectorstore, law_index
-from callback import OutCallbackHandler
+from callback import OutCallbackHandler, OutputLogger
 
 #加入向量数据库
 def init_vectorstore() -> None:
@@ -61,12 +63,8 @@ async def run_shell() -> None:
         out_callback.done.clear()
 
 
-async def testGrtLawChain():
-    out_callback = OutCallbackHandler()           # 流式输出回调
-    chain = get_law_chain(config, out_callback=out_callback)  # 法律问答链
-    question = input("\n用户:")
-    response = await chain.ainvoke({"question": question})
-    print(response)
+
+
 
 
 
@@ -75,10 +73,10 @@ def testMultiQueryRetriever():
     # 创建多查询检索器
     law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
     vs_retriever = law_vs.as_retriever(search_kwargs={"k": config.LAW_VS_SEARCH_K})  # 法律检索器
-    multi_query_retriever = get_multi_query_law_retiever(vs_retriever, get_model())
+    multi_query_retriever = get_multi_query_law_retiever1(vs_retriever, get_model())
 
     # 使用多查询检索器检索文档
-    question = "故意杀人判几年？"
+    question = "魔法飞行有什么限制吗？"
     documents = multi_query_retriever.get_relevant_documents(question)
     print("成功产生documents")
     # 输出检索结果
@@ -91,6 +89,29 @@ def test1():
     test_output = "故意伤害罪的构成要件\n伤害案件立案标准\n人身伤害法律量刑"
     print(parser.parse(test_output)) 
 
+async def testGrtLawChain():
+    out_callback = OutCallbackHandler()           # 流式输出回调
+    chain = get_law_chain(config, out_callback=out_callback)  # 法律问答链
+    question = input("\n用户:")
+    response = await chain.ainvoke({"question": question})
+    print(response)
+
+
+def test2():
+    # 检查非口语的是否可以
+    question = "魔法飞行有什么限制吗？"
+    chain = get_formal_question_chain(config)
+    response = chain.invoke({"question": question});
+    pprint(response)
+
+
+
+
+
+    
 if __name__=="__main__":
+    # torch.cuda.empty_cache()
     asyncio.run(run_shell())
     # init_vectorstore()
+    # testMultiQueryRetriever()
+    # test2()

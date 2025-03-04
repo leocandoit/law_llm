@@ -26,10 +26,11 @@ from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain_core.runnables import Runnable
 from combine import combine_law_docs, combine_web_docs
 from utils import get_vectorstore, get_model
-from retriever import  get_multi_query_law_retiever
-from prompt import LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT
+from retriever import  get_multi_query_law_retiever, get_multi_query_law_retiever1
+from prompt import FORMAL_QUESTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT
 
 
 def get_check_law_chain(config: Any) -> Chain: 
@@ -41,6 +42,49 @@ def get_check_law_chain(config: Any) -> Chain:
     # 这个函数会把yes转换成true no转换成false
 
     return check_chain 
+
+########下面是测试#####
+
+class DebuggableModel(Runnable):
+    def __init__(self, model, debug=True):
+        self.model = model
+        self.debug = debug
+
+    def invoke(self, input, config=None):
+        # 调用原始模型
+        output = self.model.invoke(input, config)
+        
+        # 打印调试信息
+        if self.debug:
+            print("\n=== 模型原始输出 ===")
+            print(f"输入: {input}")
+            print(f"输出: {output}")
+            print("====================\n")
+        
+        return output
+def get_check_law_chain1(config: Any) -> Chain:
+    model = get_model()
+    
+    # 包装可调试模型
+    debuggable_model = DebuggableModel(model, debug=True)  # 调试开关
+    
+    check_chain = CHECK_LAW_PROMPT | debuggable_model | BooleanOutputParser()
+    
+    return check_chain
+
+
+##########上面是测试###########
+
+
+
+
+
+def get_formal_question_chain(config:Any) -> Chain:
+    model = get_model()
+    formal_chain = FORMAL_QUESTION_PROMPT | model | StrOutputParser() 
+    return formal_chain
+
+
 
 def get_law_chain(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Chain:
     # 1. 初始化检索器
