@@ -1,7 +1,7 @@
 # coding: utf-8
 from langchain.prompts import PromptTemplate
 
-# law_prompt_template = """你是一个专业的律师，请你结合以下内容回答问题:
+# law_prompt_template1 = """你是一个专业的律师，请你结合以下内容回答问题:
 # {law_context}
 
 # {web_context}
@@ -15,13 +15,34 @@ law_prompt_template = """你是一个专业的律师，请你结合以下内容�
 问题: {question}
 """
 
-# LAW_PROMPT = PromptTemplate(
+# LAW_PROMPT1 = PromptTemplate(
 #     template=law_prompt_template, input_variables=["law_context", "web_context", "question"]
 # )
+
+
 LAW_PROMPT = PromptTemplate(
     template=law_prompt_template, input_variables=["law_context", "question"]
 )
 
+####添加历史记录#########
+law_prompt_template2 = """你是一个专业的律师，请你结合以下内容回答问题:
+[历史对话记录]  # 新增历史部分
+    {history}
+
+    [法律上下文]
+    {law_context}
+
+    [当前问题]
+    {question}
+
+    请根据以上信息用中文回答：
+"""
+LAW_PROMPT2 = PromptTemplate(
+    template=law_prompt_template, input_variables=["history","law_context", "question"]
+)
+
+
+# CHECK_LAW_PROMPT的核心作用就是将用户输入注入到模板的{question}位置
 check_law_prompt_template = """你是一名律师，请判断下面问题是否和法律相关，相关请回答YES，不相关请回答NO，不允许其它任何形式的输出，不允许在答案中添加编造成分。
 问题: {question}
 """
@@ -62,3 +83,5 @@ formal_question_prompt_template =  """你是一名法律文书助理，请根据
 FORMAL_QUESTION_PROMPT = PromptTemplate(
     template=formal_question_prompt_template,input_variables = ["question"]
 )
+
+

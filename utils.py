@@ -15,6 +15,9 @@ from langchain.callbacks.manager import Callbacks
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain import HuggingFacePipeline
+from config import MAX_HISTORY_LENGTH
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.memory import ChatMessageHistory
 
 import os
 os.environ["OPENAI_API_KEY"] = "sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF"
@@ -120,7 +123,8 @@ def get_model(
         model: str = "gpt-3.5-turbo-0613",
         streaming: bool = True,
         callbacks: Callbacks = None) -> ChatOpenAI:
-    model = ChatOpenAI(model=model, streaming=streaming, callbacks=callbacks)
+    model = ChatOpenAI(model=model, streaming=streaming, callbacks=callbacks,temperature=0)
+    # temperature=0 禁止创造性回答
     return model
 
 
@@ -139,8 +143,6 @@ def get_model1(callbacks: Callbacks = None):
     llm = HuggingFacePipeline(pipeline=pipe1,callbacks=callbacks)
     pprint(llm)
     return llm
-
-
 
 
 

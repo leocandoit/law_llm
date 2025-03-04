@@ -15,6 +15,7 @@ class Config:
     WEB_PORT = 7860
     WEB_USERNAME = "username"
     WEB_PASSWORD = "password"
+    MAX_HISTORY_LENGTH = 5
 
 
 config = Config()
