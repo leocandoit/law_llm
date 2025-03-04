@@ -1,7 +1,8 @@
-# law_llm
-一个针对法律的大模型项目
+## law_llm
 
-# 疑问
+这是一个针对法律的大模型项目，功能齐全适合新手入门的RAG项目。欢迎star！
+
+### 疑问
 
 ```
 from FlagEmbedding import FlagAutoModel
@@ -10,15 +11,16 @@ model = FlagAutoModel.from_finetuned('BAAI/bge-base-en-v1.5',
                                       query_instruction_for_retrieval="Represent this sentence for searching relevant passages:",
                                       use_fp16=True)
 ```
-query_instruction_for_retrieval和use_fp16在HuggingFaceEmbeddings里没有这个参数设置，FlagAutoModel又用不了，因为我要用CacheBackedEmbeddings，这个为增强性能而设计，通过缓存机制加速处理过程。我现在好像没搞清楚它们之间的关系，所以只使用bge官方的了
-后续：还是不行，bge的话缺少方法 AttributeError: 'BaseEmbedder' object has no attribute 'embed_documents'
-这表明 self._embedding_function 是一个 BaseEmbedder 对象，但 BaseEmbedder 类没有 embed_documents 方法。这通常是因为嵌入模型（embedding function）未正确设置或初始化。
-所以最后还是报错了，等实习的时候问问大佬
 
-2025/3/1
+> query_instruction_for_retrieval和use_fp16在HuggingFaceEmbeddings里没有这个参数设置，FlagAutoModel又用不了，因为我要用CacheBackedEmbeddings，这个为增强性能而设计，通过缓存机制加速处理过程。我现在好像没搞清楚它们之间的关系，所以只使用bge官方的了
+> 后续：还是不行，bge的话缺少方法 AttributeError: 'BaseEmbedder' object has no attribute 'embed_documents'
+> 这表明 self._embedding_function 是一个 BaseEmbedder 对象，但 BaseEmbedder 类没有 embed_documents 方法。这通常是因为嵌入模型（embedding function）未正确设置或初始化。
+> 所以最后还是报错了，等实习的时候问问大佬
+
+*2025/3/1*
 成功往向量化数据库存入数据
 
-2025/3/2
+*2025/3/2*
 好像回答了我的问题了！
 问题: 你好 请问今天是周几
 解答:
@@ -37,37 +39,59 @@ query_instruction_for_retrieval和use_fp16在HuggingFaceEmbeddings里没有这�
 
 最终的也跑通了 mlgbd 问题出在根本原因是 提示模板 和 语言模型链 之间的输入格式不匹配
 
-# class LineListOutputParser(PydanticOutputParser):
-#     """
-#     自定义输出解析器
-#     模型的输出解析为按行分隔的列表
-#     """
-#     def __init__(self) -> None:
-#         super().__init__(pydantic_object=LineList)
+```#
+# """
 
-#     def parse(self, text: str) -> LineList:
-#         lines = text.strip().split("\n")
-#         return LineList(lines=lines)
+# 自定义输出解析器
+
+# 模型的输出解析为按行分隔的列表
+
+# """
+
+# def __init__(self) -> None:
+
+# super().__init__(pydantic_object=LineList)
+
+# def parse(self, text: str) -> LineList:
+
+# lines = text.strip().split("\n")
+
+# return LineList(lines=lines)
 
 class LineListOutputParser(BaseOutputParser):
-    """纯文本分行解析器"""
-    
-    def get_format_instructions(self) -> str:
-        return "每行一个结果，不要使用任何格式或标号"
-    
-    def parse(self, text: str) -> List[str]:
-        return [line for line in text.strip().split("\n") if line.strip()]
+"""纯文本分行解析器"""
 
+def get_format_instructions(self) -> str:
+return "每行一个结果，不要使用任何格式或标号"
+
+def parse(self, text: str) -> List[str]:
+return [line for line in text.strip().split("\n") if line.strip()]
 但是网络检索没有加,不能联系上下文
-
+```
 
 2025/03/03
 todo：
+
 1. 补全改写，可能有连续对话 完成
 2. 非口语化改写            完成
 3. 搞清楚callback是啥
 
-2025/03/04
+> 回调函数
+>
+> * **实时流式输出**
+>   回调函数可以在模型生成答案时实时接收和处理输出，从而实现流式响应，让用户可以更快地看到部分结果，而不必等到整个生成过程完成。
+> * **日志记录和调试**
+>   回调可以记录每个步骤的状态、执行进度以及潜在的错误信息，有助于开发者在调试过程中了解每个环节的具体表现，快速定位问题所在。
+> * **异步事件处理**
+>   在异步或并行处理环境下，回调函数能够在某个操作完成后及时触发后续动作，使得整个链式流程更高效地运行，而无需阻塞等待每个步骤的完成。
+
+*2025/03/04*
 todo:
-1. 搞清楚提示词是怎么用的 完成
-2.
+
+1. 搞清楚提示词是怎么用的   完成
+2. 利用历史信息             完成
+
+*2025/03/05*
+
+* [ ]  完成意图识别
+* [ ]  网络检索
