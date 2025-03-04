@@ -3,7 +3,7 @@ import json
 import os
 from loader import LawLoader
 from splitter import MdSplitter
-from utils import get_cached_embedder, get_embedder
+from utils import get_embedder, get_memory
 from langchain_community.vectorstores import Chroma
 
 # 测试分词的效果
@@ -62,5 +62,16 @@ def test_embedding_model():
     # 检查嵌入结果是否非空
     assert all(len(embedding) > 0 for embedding in embeddings), "Embeddings should not be empty."
 
+
+#打印记忆部分
+def test3():
+    # 获取记忆
+    memory = get_memory()
+    print(memory.load_memory_variables({}))
+    memory.save_context({"question":"你是谁"},{"answer":"我是LangChain"})
+    print(memory.load_memory_variables({}))
+
+    
+
 if __name__ == "__main__":
-    test_embedding_model()
+    test3()

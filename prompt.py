@@ -26,8 +26,8 @@ LAW_PROMPT = PromptTemplate(
 
 ####添加历史记录#########
 law_prompt_template2 = """你是一个专业的律师，请你结合以下内容回答问题:
-[历史对话记录]  # 新增历史部分
-    {history}
+[历史对话记录] 
+    {chat_history}
 
     [法律上下文]
     {law_context}
@@ -38,7 +38,7 @@ law_prompt_template2 = """你是一个专业的律师，请你结合以下内容
     请根据以上信息用中文回答：
 """
 LAW_PROMPT2 = PromptTemplate(
-    template=law_prompt_template, input_variables=["history","law_context", "question"]
+    template=law_prompt_template2, input_variables=["chat_history","law_context", "question"]
 )
 
 

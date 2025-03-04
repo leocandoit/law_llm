@@ -4,7 +4,7 @@ import asyncio
 from pprint import pprint
 
 import torch
-from chain import get_check_law_chain,get_formal_question_chain, get_law_chain
+from chain import get_check_law_chain,get_formal_question_chain, get_law_chain, get_law_chain2
 from config import config
 from loader import LawLoader
 from retriever import LineListOutputParser, get_multi_query_law_retiever, get_multi_query_law_retiever1
@@ -32,9 +32,9 @@ def init_vectorstore() -> None:
 
 async def run_shell() -> None:
     # 1. 初始化链
-    check_law_chain = get_check_law_chain(config)  # 法律问题检查链
+    # check_law_chain = get_check_law_chain(config)  # 法律问题检查链
     out_callback = OutCallbackHandler()           # 流式输出回调
-    chain = get_law_chain(config, out_callback=out_callback)  # 法律问答链
+    chain = get_law_chain2(config, out_callback=out_callback)  # 法律问答链
 
     # 2. 交互循环
     while True:
@@ -45,10 +45,10 @@ async def run_shell() -> None:
 
         # 4. 检查问题是否与法律相关
         print("\n法律小助手:", end="")
-        is_law = check_law_chain.invoke({"question": question})
-        if not is_law:
-            print("不好意思，我是法律AI助手，请提问和法律有关的问题。")
-            continue  # 跳过非法律问题
+        # is_law = check_law_chain.invoke({"question": question})
+        # if not is_law:
+            # print("不好意思，我是法律AI助手，请提问和法律有关的问题。")
+            # continue  # 跳过非法律问题
 
         # 5. 生成回答并流式输出
         task = asyncio.create_task(chain.ainvoke({"question": question}))
@@ -115,3 +115,12 @@ if __name__=="__main__":
     # init_vectorstore()
     # testMultiQueryRetriever()
     # test2()
+    # chain = get_law_chain2(config, OutCallbackHandler())
+    # response = chain.invoke({
+    #     "question": "我叫王修豪"  # 必须包含 question 字段
+    # })
+    # print(response["answer"])
+    # response = chain.invoke({
+    #     "question": "我叫什么名字"  # 必须包含 question 字段
+    # })
+    # print(response["answer"])

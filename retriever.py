@@ -2,7 +2,6 @@
 from typing import List
 
 from langchain.schema.vectorstore import VectorStore
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.schema import BaseRetriever, Document
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain.pydantic_v1 import Field, BaseModel
@@ -14,6 +13,7 @@ from langchain_core.output_parsers import BaseOutputParser
 # from duckduckgo_search.exceptions import DuckDuckGoSearchException
 
 from prompt import MULTI_QUERY_PROMPT_TEMPLATE
+from utils import get_memory
 
 
 # class LawWebRetiever(BaseRetriever):
@@ -151,3 +151,19 @@ def get_multi_query_law_retiever1(retriever: BaseRetriever, model: BaseModel) ->
 
 
 #############上面是测试####################
+
+# 记忆检索器
+def get_memory_retiever(retriever: BaseRetriever, model: BaseModel) -> BaseRetriever:
+    """
+    记忆检索器
+    """
+    output_parser = LineListOutputParser() # 创建输出解析器
+    memory = get_memory()
+
+    llm_chain = LLMChain(llm=model, prompt=MULTI_QUERY_PROMPT_TEMPLATE,memory = memory)
+
+    retriever = MultiQueryRetriever(
+        retriever=retriever, llm_chain=llm_chain, parser_key="lines"
+    )
+
+    return retriever

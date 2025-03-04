@@ -15,9 +15,7 @@ from langchain.callbacks.manager import Callbacks
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain import HuggingFacePipeline
-from config import MAX_HISTORY_LENGTH
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.memory import ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
 
 import os
 os.environ["OPENAI_API_KEY"] = "sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF"
@@ -144,6 +142,14 @@ def get_model1(callbacks: Callbacks = None):
     pprint(llm)
     return llm
 
+# 创建ConversationBufferMemory
+def get_memory() -> ConversationBufferMemory:
+    return ConversationBufferMemory(
+        memory_key="chat_history",
+        input_key="question",  # 必须与输入字段名一致
+        output_key="answer",    # 必须与输出字段名一致
+        return_messages=True
+    )
 
 
 if __name__ == "__main__":
