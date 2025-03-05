@@ -28,7 +28,7 @@ from langchain.callbacks.manager import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLambda
 from combine import combine_law_docs, combine_web_docs
-from utils import get_memory, get_vectorstore, get_model
+from utils import get_memory, get_model2, get_vectorstore, get_model
 from retriever import  get_multi_query_law_retiever, get_multi_query_law_retiever1
 from prompt import FORMAL_QUESTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT, LAW_PROMPT2
 
@@ -140,7 +140,7 @@ def get_law_chain(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Ch
     # print("检索完成")
     return chain
 
-def get_law_chain2(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Chain:
+def get_law_chain_history(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Chain:
     # 1. 初始化检索器
     law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
     memory = get_memory()  # 内存向量库
@@ -149,20 +149,17 @@ def get_law_chain2(config: Any, out_callback: AsyncIteratorCallbackHandler) -> C
  
 
     # 2. 多查询法律检索器（优化法律条文检索效果）
-    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model())
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model2())
 
     # 3. 回调函数配置（用于流式输出）
     callbacks = [out_callback] if out_callback else []
-    # print("正在检索")
     # 4. 构建链式处理流程
-    # 修改后的完整chain结构
     chain = (
         # 第一步：初始化输入结构
         RunnableMap({
             "question": lambda x: x["question"],
             "chat_history": lambda x: memory.load_memory_variables(x)["chat_history"]
         })
-        # | RunnableLambda(lambda x: (print("Step 1 output:", x), x)[1])
         
         # 第二步：并行检索
         | RunnableMap({
@@ -170,7 +167,6 @@ def get_law_chain2(config: Any, out_callback: AsyncIteratorCallbackHandler) -> C
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         })
-        # | RunnableLambda(lambda x: (print("Step 2 output:", x), x)[1])
         
         # 第三步：构建上下文
         | RunnableMap({
@@ -178,43 +174,28 @@ def get_law_chain2(config: Any, out_callback: AsyncIteratorCallbackHandler) -> C
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         })
-        # | RunnableLambda(lambda x: (print("Step 3 output:", x), x)[1])
-        
-        # | RunnableLambda(lambda x: (
-        #     print("生成的提示词:", LAW_PROMPT2.format(
-        #         chat_history=x["chat_history"],
-        #         law_context=x["law_context"],
-        #         question=x["question"]
-        #     )),
-        #     x
-        # )[1])
-
 
         # 第四步：生成回答，同时保留 law_context
         | {
-            "answer": LAW_PROMPT2 | get_model(callbacks=callbacks) | StrOutputParser(),
+            "answer": LAW_PROMPT2 | get_model2(callbacks=callbacks) | StrOutputParser(),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history"),
             "law_context": itemgetter("law_context")
         }
-        # | RunnableLambda(lambda x: (print("Step 4 output:", x), x)[1])
         
         # 第五步：保存记忆
         | RunnableLambda(lambda x: (memory.save_context(
             {"question": x["question"]},
             {"answer": x["answer"]}
         ), x)[1])
-        # | RunnableLambda(lambda x: (print("Step 5 output:", x), x)[1])
         
         # 第六步：清理输出
         | RunnableMap({
             "answer": itemgetter("answer"),
             "law_context": itemgetter("law_context")
         })
-        # | RunnableLambda(lambda x: (print("Final output:", x), x)[1])
     )
 
-    # print("检索完成")
     return chain
 
 def get_hypo_questions_chain(config: Any, callbacks=None) -> Chain:

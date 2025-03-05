@@ -16,10 +16,13 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain import HuggingFacePipeline
 from langchain.memory import ConversationBufferMemory
+from openai import OpenAI
 
 import os
 os.environ["OPENAI_API_KEY"] = "sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF"
 os.environ["OPENAI_API_BASE"]="https://chatapi.littlewheat.com/v1"
+os.environ["DEEPSEEK_API_KEY"] = "sk-4083677e13264b4d9eb2f4cc5914a22f"
+os.environ["DEEPSEEK_API_BASE"] = "https://api.deepseek.com/v1"
 
 
 def get_embedder() -> CacheBackedEmbeddings:
@@ -142,6 +145,15 @@ def get_model1(callbacks: Callbacks = None):
     pprint(llm)
     return llm
 
+def get_model2(
+        model: str = "deepseek-chat",
+        streaming: bool = True,
+        callbacks: Callbacks = None) -> ChatOpenAI:
+    model = ChatOpenAI(model=model, streaming=streaming, callbacks=callbacks,temperature=0)
+    # temperature=0 禁止创造性回答
+    return model
+
+
 # 创建ConversationBufferMemory
 def get_memory() -> ConversationBufferMemory:
     return ConversationBufferMemory(
@@ -153,4 +165,6 @@ def get_memory() -> ConversationBufferMemory:
 
 
 if __name__ == "__main__":
-    get_model()
+    model = get_model2()
+    ans = model.invoke("你好你是谁 是openai还是deepseek")
+    print(ans)

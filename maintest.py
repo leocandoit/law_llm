@@ -4,7 +4,7 @@ import asyncio
 from pprint import pprint
 
 import torch
-from chain import get_check_law_chain,get_formal_question_chain, get_law_chain, get_law_chain2
+from chain import get_formal_question_chain, get_law_chain, get_law_chain_history
 from config import config
 from loader import LawLoader
 from retriever import LineListOutputParser, get_multi_query_law_retiever, get_multi_query_law_retiever1
@@ -34,7 +34,7 @@ async def run_shell() -> None:
     # 1. 初始化链
     # check_law_chain = get_check_law_chain(config)  # 法律问题检查链
     out_callback = OutCallbackHandler()           # 流式输出回调
-    chain = get_law_chain2(config, out_callback=out_callback)  # 法律问答链
+    chain = get_law_chain_history(config, out_callback=out_callback)  # 法律问答链
 
     # 2. 交互循环
     while True:
