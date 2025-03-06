@@ -10,7 +10,7 @@ from combine import combine_law_docs
 from loader import LawLoader
 from retriever import get_multi_query_law_retiever
 from splitter import MdSplitter
-from utils import get_embedder, get_memory, get_model, get_model2, get_vectorstore
+from utils import get_embedder, get_memory, get_model_openai, get_vectorstore
 from langchain_community.vectorstores import Chroma
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -91,7 +91,7 @@ def test3():
 async def test_streaming():
     callbacks = [StreamingStdOutCallbackHandler]  # 使用你的 OutCallbackHandler
     prompt = "请简单说明一下法律相关的问题。"
-    result = await get_model(callbacks=callbacks)(prompt)
+    result = await get_model_openai(callbacks=callbacks)(prompt)
     print("模型返回:", result)
 
 test_prompt_template= """  
@@ -114,7 +114,7 @@ async def run_shell() -> None:
     chain = (
         RunnableMap({
             "question": lambda x: x["question"],
-            "answer": TEST_PROMPT | get_model2(callbacks=callbacks) | StrOutputParser()
+            "answer": TEST_PROMPT | get_model_openai(callbacks=callbacks) | StrOutputParser()
         })
     )
     while True:
@@ -280,7 +280,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
     
 
     # 2. 多查询法律检索器（优化法律条文检索效果）
-    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model2())
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_openai())
 
     # 3. 回调函数配置（用于流式输出）
     callbacks = [out_callback] if out_callback else []
@@ -294,7 +294,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
         
         # 第二部 检查意图
         | RunnableMap({
-            "intent":CHECK_INTENT_PROMPT | get_model2()|StrOutputParser(),
+            "intent":CHECK_INTENT_PROMPT | get_model_openai()|StrOutputParser(),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         })
@@ -318,7 +318,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
                         chat_history = itemgetter("chat_history"),
                         law_context = itemgetter("law_context"),
                         question = itemgetter("question")
-                    ) | LAW_PROMPT_HISTORY | get_model2(callbacks=callbacks) | StrOutputParser()
+                    ) | LAW_PROMPT_HISTORY | get_model_openai(callbacks=callbacks) | StrOutputParser()
                 )
             ),
             # 非法律分支（简化处理）
@@ -326,7 +326,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
              RunnablePassthrough.assign(
                 law_context=lambda _: "N/A",
                 answer=RunnableLambda(lambda _: "您好，我专注于法律咨询服务。") 
-                    | get_model2(callbacks=callbacks)  # 强制流式输出
+                    | get_model_openai(callbacks=callbacks)  # 强制流式输出
                     | StrOutputParser())
         )
         

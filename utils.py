@@ -26,7 +26,7 @@ os.environ["DEEPSEEK_API_BASE"] = "https://api.deepseek.com/v1"
 
 def get_embedder() -> CacheBackedEmbeddings:
     fs = LocalFileStore("./.cache/embeddings")
-    underlying_embeddings = OpenAIEmbeddings(openai_api_key="sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF",openai_api_base="https://chatapi.littlewheat.com/v1")
+    underlying_embeddings = OpenAIEmbeddings()
     
     cached_embedder = CacheBackedEmbeddings.from_bytes_store(
         underlying_embeddings, fs, namespace=underlying_embeddings.model
@@ -119,7 +119,7 @@ def law_index(docs: List[Document], show_progress: bool = True) -> Dict:
     return dict(info)
 
 
-def get_model(
+def get_model_openai(
         model: str = "gpt-3.5-turbo-0613",
         streaming: bool = True,
         callbacks: Callbacks = None) -> ChatOpenAI:
@@ -128,7 +128,7 @@ def get_model(
     return model
 
 
-def get_model1(callbacks: Callbacks = None):
+def get_model_qwen(callbacks: Callbacks = None):
     tokenizer = AutoTokenizer.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', device_map="cuda", trust_remote_code=True).eval()
     pipe1 = pipeline(
@@ -144,7 +144,7 @@ def get_model1(callbacks: Callbacks = None):
     pprint(llm)
     return llm
 
-def get_model2(
+def get_model_dpsk(
         model: str = "deepseek-chat",
         streaming: bool = True,
         callbacks: Callbacks = None) -> ChatOpenAI:
@@ -164,6 +164,6 @@ def get_memory() -> ConversationBufferMemory:
 
 
 if __name__ == "__main__":
-    model = get_model2()
+    model = get_model_openai()
     ans = model.invoke("你好你是谁 是openai还是deepseek")
     print(ans)

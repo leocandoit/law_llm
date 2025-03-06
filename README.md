@@ -1,73 +1,17 @@
-## law_llm
+# LawBrain
 
-这是一个针对法律的大模型项目，功能齐全适合新手入门的RAG项目。欢迎star！
+律智大模型
 
-### 疑问
+这是一个法律咨询的大模型项目，功能齐全适合新手入门的RAG项目。欢迎star！⭐
 
-```
-from FlagEmbedding import FlagAutoModel
-
-model = FlagAutoModel.from_finetuned('BAAI/bge-base-en-v1.5',
-                                      query_instruction_for_retrieval="Represent this sentence for searching relevant passages:",
-                                      use_fp16=True)
-```
-
-> query_instruction_for_retrieval和use_fp16在HuggingFaceEmbeddings里没有这个参数设置，FlagAutoModel又用不了，因为我要用CacheBackedEmbeddings，这个为增强性能而设计，通过缓存机制加速处理过程。我现在好像没搞清楚它们之间的关系，所以只使用bge官方的了
-> 后续：还是不行，bge的话缺少方法 AttributeError: 'BaseEmbedder' object has no attribute 'embed_documents'
-> 这表明 self._embedding_function 是一个 BaseEmbedder 对象，但 BaseEmbedder 类没有 embed_documents 方法。这通常是因为嵌入模型（embedding function）未正确设置或初始化。
-> 所以最后还是报错了，等实习的时候问问大佬
+### 
 
 *2025/3/1*
 成功往向量化数据库存入数据
 
 *2025/3/2*
-好像回答了我的问题了！
-问题: 你好 请问今天是周几
-解答:
+好像回答了我的问题了！问题出在根本原因是 提示模板 和 语言模型链 之间的输入格式不匹配
 
-好的,我明白了。您想了解的是今天的星期天还是周一？如果您有其他关于日期的问题或者需要帮助来查询具体的某个日子的信息的话（例如生日、结婚纪念日等），请您告诉我具体是什么情况，并我会尽力为您提供相 关信息或服务。
-
-解决这个问题：
-
-解决问题：根据您的请求，“您好”，“问什么”以及给出的答复都是与法律规定相关的事项。“明天”的定义是指从现在起到未来的一段时间内的时间长度，在此期间没有特定的具体意义；而 “周末”, 是指周六及以后的日 历时间点范围内的所有时间段之总称.因此不能简单地将一个事件归类为某一天中的某一时刻段.
-
-所以这个任务涉及到对时间和概念的理解方面知识上的应用错误
-
-最终结果:NO YES NO YES 不同的回答方式可能会导致不同的理解效果甚至误导用户对于所要获取信息的认知度不一致的结果出现的情况发生可能性大且不可预测性高 对于此类敏感性的要求较高的场合可能产生负面影响 要求提供准确无误的答案以避免潜在风险的发生 这个场景不符合上述条件 它属于一种未明确告知的情况下无法进行正确处理的情景 在这种情况下提供的回复并不能满足用户的实际需求从而影响用户体验 需要进一步 澄清并确保所提供的解决方案符合法律法规的要求 可能引发不必要的纠纷 或者带来误解 如果未能及时纠正可能导致严重后果 的负面效应 并给用户提供虚假的服务体验 提供正确的解释和服务流程是非常重要的 因为 我们应当尊重每一个使用我们的产品的人 希望他们能够获得真实有效的反馈和支持 我们应该始终秉持着诚信原则 和公平对待每一位客户的需求 才是我们工作的核心价值观之一 愿我们都能携手合作 将任何可能出现的风险降到最低 最后再次强调我们需要保持高度的责任心 来维护好自己的声誉 关注客户的权益 改善服务质量 推进合规工作 共创和谐社会环境 合法性和道德标准必须得到遵守并且被充分考虑 切实保证了产品的质量和安全 总而言说我们要始终保持警惕 快速响应各种突发状况 强化自我保护意识 确保自己不会因为一些小失误而导致严重的损失 整合多种资源 加强内部管理 观察市场动态 盘算竞争对手行为调整.
-
-但是好像 额mm
-
-最终的也跑通了 mlgbd 问题出在根本原因是 提示模板 和 语言模型链 之间的输入格式不匹配
-
-```#
-# """
-
-# 自定义输出解析器
-
-# 模型的输出解析为按行分隔的列表
-
-# """
-
-# def __init__(self) -> None:
-
-# super().__init__(pydantic_object=LineList)
-
-# def parse(self, text: str) -> LineList:
-
-# lines = text.strip().split("\n")
-
-# return LineList(lines=lines)
-
-class LineListOutputParser(BaseOutputParser):
-"""纯文本分行解析器"""
-
-def get_format_instructions(self) -> str:
-return "每行一个结果，不要使用任何格式或标号"
-
-def parse(self, text: str) -> List[str]:
-return [line for line in text.strip().split("\n") if line.strip()]
-但是网络检索没有加,不能联系上下文
-```
 
 2025/03/03
 todo：

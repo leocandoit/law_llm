@@ -9,7 +9,7 @@ from config import config
 from loader import LawLoader
 from retriever import LineListOutputParser, get_multi_query_law_retiever
 from splitter import MdSplitter
-from utils import clear_vectorstore, get_model, get_record_manager, get_vectorstore, law_index
+from utils import clear_vectorstore, get_model_openai, get_record_manager, get_vectorstore, law_index
 from callback import OutCallbackHandler,OutputLogger
 
 #加入向量数据库
@@ -69,7 +69,7 @@ def testMultiQueryRetriever():
     # 创建多查询检索器
     law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
     vs_retriever = law_vs.as_retriever(search_kwargs={"k": config.LAW_VS_SEARCH_K})  # 法律检索器
-    multi_query_retriever = get_multi_query_law_retiever(vs_retriever, get_model())
+    multi_query_retriever = get_multi_query_law_retiever(vs_retriever, get_model_openai())
 
     # 使用多查询检索器检索文档
     question = "魔法飞行有什么限制吗？"
