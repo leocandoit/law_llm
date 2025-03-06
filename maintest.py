@@ -4,10 +4,10 @@ import asyncio
 from pprint import pprint
 
 import torch
-from chain import get_formal_question_chain, get_law_chain, get_law_chain_history
+from chain import get_formal_question_chain, get_law_chain, get_law_chain_history, get_law_chain_intent
 from config import config
 from loader import LawLoader
-from retriever import LineListOutputParser, get_multi_query_law_retiever, get_multi_query_law_retiever1
+from retriever import LineListOutputParser, get_multi_query_law_retiever
 from splitter import MdSplitter
 from utils import clear_vectorstore, get_model, get_record_manager, get_vectorstore, law_index
 from callback import OutCallbackHandler, OutputLogger
@@ -34,7 +34,7 @@ async def run_shell() -> None:
     # 1. 初始化链
     # check_law_chain = get_check_law_chain(config)  # 法律问题检查链
     out_callback = OutCallbackHandler()           # 流式输出回调
-    chain = get_law_chain_history(config, out_callback=out_callback)  # 法律问答链
+    chain = get_law_chain_intent(config, out_callback=out_callback)  # 法律问答链
 
     # 2. 交互循环
     while True:
@@ -52,13 +52,16 @@ async def run_shell() -> None:
 
         # 5. 生成回答并流式输出
         task = asyncio.create_task(chain.ainvoke({"question": question}))
+
+        # 等待任务启动并开始生成输出
+        await asyncio.sleep(0)  # 确保任务进入事件循环
+
         async for new_token in out_callback.aiter():  # 逐字输出
             print(new_token, end="", flush=True)
 
         # 6. 打印完整上下文
         res = await task
-        # print(res["law_context"] + "\n" + res["web_context"])
-        print(res["law_context"])
+        # print(res["law_context"])
         # 7. 重置回调状态
         out_callback.done.clear()
 
@@ -73,7 +76,7 @@ def testMultiQueryRetriever():
     # 创建多查询检索器
     law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
     vs_retriever = law_vs.as_retriever(search_kwargs={"k": config.LAW_VS_SEARCH_K})  # 法律检索器
-    multi_query_retriever = get_multi_query_law_retiever1(vs_retriever, get_model())
+    multi_query_retriever = get_multi_query_law_retiever(vs_retriever, get_model())
 
     # 使用多查询检索器检索文档
     question = "魔法飞行有什么限制吗？"
@@ -110,17 +113,4 @@ def test2():
 
     
 if __name__=="__main__":
-    # torch.cuda.empty_cache()
     asyncio.run(run_shell())
-    # init_vectorstore()
-    # testMultiQueryRetriever()
-    # test2()
-    # chain = get_law_chain2(config, OutCallbackHandler())
-    # response = chain.invoke({
-    #     "question": "我叫王修豪"  # 必须包含 question 字段
-    # })
-    # print(response["answer"])
-    # response = chain.invoke({
-    #     "question": "我叫什么名字"  # 必须包含 question 字段
-    # })
-    # print(response["answer"])

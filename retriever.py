@@ -10,67 +10,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.chains import LLMChain
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain_core.output_parsers import BaseOutputParser
-# from duckduckgo_search.exceptions import DuckDuckGoSearchException
 
 from prompt import MULTI_QUERY_PROMPT_TEMPLATE
 from utils import get_memory
 
-
-# class LawWebRetiever(BaseRetriever):
-#     """
-#     网页检索其，用于从搜索引擎中检索相关网页，并分割成文档块
-#     """
-#     # Inputs
-#     # 向量存储，用于存储检索到的网页块
-#     vectorstore: VectorStore = Field(
-#         ..., description="Vector store for storing web pages"
-#     )
-
-#     # DuckDuckGo 搜索 API 包装器，用于执行网页搜索
-#     search: DuckDuckGoSearchAPIWrapper = Field(..., description="DuckDuckGo Search API Wrapper")
-#     # 每次搜索返回的结果数量
-#     num_search_results: int = Field(1, description="Number of pages per Google search")
-
-#     # 文本分割器，用于将网页内容分割为块
-#     text_splitter: TextSplitter = Field(
-#         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
-#         description="Text splitter for splitting web pages into chunks",
-#     )
-
-#     def _get_relevant_documents(
-#         self,
-#         query: str,
-#         *,
-#         run_manager: CallbackManagerForRetrieverRun,
-#     ) -> List[Document]:
-#         """
-#         根据查询检索相关文档，并将网页内容分割为文档块。
-
-#         参数:
-#             query (str): 用户输入的查询字符串。
-#             run_manager (CallbackManagerForRetrieverRun): 回调管理器，用于处理检索过程中的回调。
-
-#         返回:
-#             List[Document]: 检索到的文档块列表。
-#         """
-#         try:
-#             # 使用 DuckDuckGo 搜索 API 检索网页
-#             results = self.search.results(query, self.num_search_results)
-#         except DuckDuckGoSearchException:
-#             # 如果搜索失败，返回空列表
-#             results = []
-
-#         docs = []
-#         for res in results:
-#             docs.append(Document(
-#                 page_content=res["snippet"],                             # 网页摘要
-#                 metadata={"link": res["link"], "title": res["title"]}    # 网页链接和标题
-#             ))
-
-#         # 使用文本分割器将文档分割为块
-#         docs = self.text_splitter.split_documents(docs)
-
-#         return docs
 
 
 # Output parser will split the LLM result into a list of queries
@@ -79,17 +22,6 @@ class LineList(BaseModel):
     lines: List[str] = Field(description="Lines of text")
 
 
-# class LineListOutputParser(PydanticOutputParser):
-#     """
-#     自定义输出解析器
-#     模型的输出解析为按行分隔的列表
-#     """
-#     def __init__(self) -> None:
-#         super().__init__(pydantic_object=LineList)
-
-#     def parse(self, text: str) -> LineList:
-#         lines = text.strip().split("\n")
-#         return LineList(lines=lines)
 
 class LineListOutputParser(BaseOutputParser):
     """纯文本分行解析器"""
@@ -118,39 +50,6 @@ def get_multi_query_law_retiever(retriever: BaseRetriever, model: BaseModel) -> 
     )
 
     return retriever
-
-
-#############下面是测试####################
-
-class PrintableMultiQueryRetriever(MultiQueryRetriever):
-    def generate_queries(self, query: str, run_manager=None) -> List[str]:
-        """重写查询生成方法并添加打印逻辑"""
-        queries = super().generate_queries(query, run_manager)
-        
-        print("\n=== 多查询生成结果 ===")
-        for i, q in enumerate(queries, 1):
-            print(f"[Query {i}]: {q}")
-        print("======================\n")
-        
-        return queries
-    
-def get_multi_query_law_retiever1(retriever: BaseRetriever, model: BaseModel) -> BaseRetriever:
-    """
-    多查询检索器
-    """
-    output_parser = LineListOutputParser() # 创建输出解析器
-
-    llm_chain = LLMChain(llm=model, prompt=MULTI_QUERY_PROMPT_TEMPLATE, output_parser=output_parser)
-
-    retriever = PrintableMultiQueryRetriever(
-        retriever=retriever, llm_chain=llm_chain, parser_key="lines"
-    )
-
-    return retriever
-
-
-
-#############上面是测试####################
 
 # 记忆检索器
 def get_memory_retiever(retriever: BaseRetriever, model: BaseModel) -> BaseRetriever:

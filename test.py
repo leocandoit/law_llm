@@ -3,9 +3,10 @@ import json
 import os
 from loader import LawLoader
 from splitter import MdSplitter
-from utils import get_embedder, get_memory
+from utils import get_embedder, get_memory, get_model, get_model2
 from langchain_community.vectorstores import Chroma
-
+from langchain.callbacks import AsyncIteratorCallbackHandler
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 # 测试分词的效果
 def splitterTest():
     LAW_BOOK_CHUNK_SIZE = 233
@@ -72,6 +73,11 @@ def test3():
     print(memory.load_memory_variables({}))
 
     
+async def test_streaming():
+    callbacks = [StreamingStdOutCallbackHandler]  # 使用你的 OutCallbackHandler
+    prompt = "请简单说明一下法律相关的问题。"
+    result = await get_model(callbacks=callbacks)(prompt)
+    print("模型返回:", result)
 
 if __name__ == "__main__":
-    test3()
+    test_streaming()

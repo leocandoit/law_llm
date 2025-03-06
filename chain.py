@@ -21,6 +21,7 @@ from langchain.schema.runnable import RunnableMap
 from langchain.chains.base import Chain
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.callbacks import AsyncIteratorCallbackHandler
+from langchain_core.runnables import RunnableBranch
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -29,8 +30,8 @@ from langchain.callbacks.manager import (
 from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLambda
 from combine import combine_law_docs, combine_web_docs
 from utils import get_memory, get_model2, get_vectorstore, get_model
-from retriever import  get_multi_query_law_retiever, get_multi_query_law_retiever1
-from prompt import FORMAL_QUESTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT, LAW_PROMPT2
+from retriever import  get_multi_query_law_retiever
+from prompt import FORMAL_QUESTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT,LAW_PROMPT_HISTORY, CHECK_INTENT_PROMPT
 
 
 def get_check_law_chain(config: Any) -> Chain: 
@@ -177,7 +178,7 @@ def get_law_chain_history(config: Any, out_callback: AsyncIteratorCallbackHandle
 
         # 第四步：生成回答，同时保留 law_context
         | {
-            "answer": LAW_PROMPT2 | get_model2(callbacks=callbacks) | StrOutputParser(),
+            "answer": LAW_PROMPT_HISTORY | get_model2(callbacks=callbacks) | StrOutputParser(),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history"),
             "law_context": itemgetter("law_context")
@@ -231,3 +232,123 @@ def get_hypo_questions_chain(config: Any, callbacks=None) -> Chain:
     )
 
     return chain
+
+def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Chain:
+    def is_law_related(x: dict) -> bool:
+        # 防御性检查（处理 None 或字段缺失）
+        if not x or not isinstance(x, dict) or "intent" not in x:
+            print(f" 非法输入: {x}")
+            return False
+        return str(x.get("intent", "")).strip().lower() == "law"
+
+    # 1. 初始化检索器
+    law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
+    memory = get_memory()  # 内存向量库
+
+    vs_retriever = law_vs.as_retriever(search_kwargs={"k": config.LAW_VS_SEARCH_K})  # 法律检索器
+    
+
+    # 2. 多查询法律检索器（优化法律条文检索效果）
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model2())
+
+    # 3. 回调函数配置（用于流式输出）
+    callbacks = [out_callback] if out_callback else []
+    # 4. 构建链式处理流程
+    chain = (
+        # 第一步：初始化输入结构
+        RunnableMap({
+            "question": lambda x: x["question"],
+            "chat_history": lambda x: memory.load_memory_variables(x)["chat_history"]
+        })
+        
+        # 第二部 检查意图
+        | RunnableMap({
+            "intent":CHECK_INTENT_PROMPT | get_model2()|StrOutputParser(),
+            "question": itemgetter("question"),
+            "chat_history": itemgetter("chat_history")
+        })
+        | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+
+        
+        # 条件分支处理（修复分支数据丢失）
+        | RunnableBranch(
+            (is_law_related, RunnablePassthrough()
+                | RunnableMap({
+                    "law_docs": itemgetter("question") | multi_query_retriver,
+                })
+                | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
+                | RunnableMap({
+                    "law_context": lambda x: combine_law_docs(x["law_docs"]) or "未找到相关法律"
+                })
+                | RunnableLambda(lambda x: print(f"[AFTER] 输出数据2: {x}") or x) #########
+                | RunnableMap({
+                    "answer": LAW_PROMPT_HISTORY | get_model2() | StrOutputParser(),
+                    "law_context": itemgetter("law_context"),
+                    "question": itemgetter("question"),
+                    "chat_history": itemgetter("chat_history")
+                })
+                | RunnableLambda(lambda x: print(f"[AFTER] 输出数据3: {x}") or x) #########
+            ),
+            # 非法律分支（简化处理）
+            RunnableMap({
+                "answer": RunnableLambda(lambda _: "您好，我专注于法律咨询服务。"),
+                "law_context": RunnableLambda(lambda _: "N/A"),
+                "question": itemgetter("question"),
+                "chat_history": itemgetter("chat_history")
+            })
+        )
+        
+        # 后续处理
+        | RunnableLambda(lambda x: (
+            memory.save_context({"question": x["question"]}, {"answer": x["answer"]}),
+            x
+        )[1])
+        | RunnableMap({
+            "answer": itemgetter("answer"),
+            "law_context": itemgetter("law_context")
+        })
+
+
+
+
+
+        
+    )
+
+    return chain
+
+
+
+        # # 第二步：并行检索
+        # | RunnableMap({
+        #     "law_docs": itemgetter("question") | multi_query_retriver,
+        #     "question": itemgetter("question"),
+        #     "chat_history": itemgetter("chat_history")
+        # })
+        
+        # # 第三步：构建上下文
+        # | RunnableMap({
+        #     "law_context": lambda x: combine_law_docs(x["law_docs"]),
+        #     "question": itemgetter("question"),
+        #     "chat_history": itemgetter("chat_history")
+        # })
+
+        # # 第四步：生成回答，同时保留 law_context
+        # | {
+        #     "answer": LAW_PROMPT_HISTORY | get_model2(callbacks=callbacks) | StrOutputParser(),
+        #     "question": itemgetter("question"),
+        #     "chat_history": itemgetter("chat_history"),
+        #     "law_context": itemgetter("law_context")
+        # }
+        
+        # # 第五步：保存记忆
+        # | RunnableLambda(lambda x: (memory.save_context(
+        #     {"question": x["question"]},
+        #     {"answer": x["answer"]}
+        # ), x)[1])
+        
+        # # 第六步：清理输出
+        # | RunnableMap({
+        #     "answer": itemgetter("answer"),
+        #     "law_context": itemgetter("law_context")
+        # })

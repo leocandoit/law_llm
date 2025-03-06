@@ -25,21 +25,30 @@ LAW_PROMPT = PromptTemplate(
 )
 
 ####添加历史记录#########
-law_prompt_template2 = """你是一个专业的律师，请你结合以下内容回答问题:
-[历史对话记录] 
-    {chat_history}
+law_prompt_template_history = """  
+你是一名专业律师，请严格按以下要求回答问题：  
 
-    [法律上下文]
-    {law_context}
+【回答规则】  
+1. 必须基于提供的法律条文，禁止编造  
+2. 引用格式：`《法律名称》第XX条`（如：根据《刑法》第264条...）  
+3. 若无相关法条，明确告知无法回答  
+4. 语言简洁专业，分步骤说明  
 
-    [当前问题]
-    {question}
+【历史对话记录】  
+{chat_history}  
 
-    请根据以上信息用中文回答：
-"""
-LAW_PROMPT2 = PromptTemplate(
-    template=law_prompt_template2, input_variables=["chat_history","law_context", "question"]
-)
+【相关法律条文】  
+{law_context}  
+
+【用户问题】  
+{question}  
+
+【正式回答】  
+"""  
+LAW_PROMPT_HISTORY = PromptTemplate(  
+    template=law_prompt_template_history,  
+    input_variables=["chat_history", "law_context", "question"]  
+)  
 
 
 # CHECK_LAW_PROMPT的核心作用就是将用户输入注入到模板的{question}位置
@@ -85,3 +94,31 @@ FORMAL_QUESTION_PROMPT = PromptTemplate(
 )
 
 
+check_intent_prompt_template= """  
+你是一个意图分类器，请根据用户问题判断是否属于法律咨询。  
+
+【任务说明】  
+1. 只输出分类标签，不要解释  
+2. 标签必须为小写英文且无标点  
+3. 可选标签：  
+   - `law`（法律相关：涉及权利义务、法律法规、诉讼程序等）  
+   - `other`（其他：情感、生活技巧、非法律专业问题等）  
+
+【分类示例】  
+用户：交通事故责任如何认定？ → law  
+用户：怎样追女生？ → other  
+用户：劳动合同纠纷怎么解决？ → law  
+用户：推荐旅游景点 → other  
+
+【历史对话】  
+{chat_history}  
+
+【当前问题】  
+{question}  
+
+【分类结果】  
+"""  
+CHECK_INTENT_PROMPT = PromptTemplate(  
+    template=check_intent_prompt_template,  
+    input_variables=["chat_history", "question"]  
+)  
