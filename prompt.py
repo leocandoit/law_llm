@@ -143,6 +143,36 @@ CHECK_INTENT_PROMPT = PromptTemplate(
 )  
 
 
+FRIENDLY_REJECTION_PROMPT_template = """
+[用户问题]
+{question}
 
+[对话延续规则]  
+1️⃣ **情感共鸣**：先回应原始问题的情感价值  
+2️⃣ **场景关联**：挖掘该话题下的潜在法律需求  
+3️⃣ **开放引导**：用选择疑问句提供咨询方向  
 
+[示例指令]  
+用户：最近想辞职去旅游  
+→ "放松身心确实很重要呢！(😊) 在规划旅程时，是否需要了解：  
+A. 离职期间的劳动权益保障  
+B. 旅游合同中的消费者保护条款  
+C. 旅途意外伤害的法律责任划分"  
 
+用户：如何追讨欠款？  
+→ "理解您维护权益的决心！(⚖️) 建议从这些角度分析：  
+1. 借款凭证的法律效力  
+2. 不同金额对应的诉讼程序  
+3. 财产保全申请流程"  
+
+用户：推荐周末活动  
+→ "休闲活动能缓解压力呢~(🌿) 如果涉及：  
+• 活动场地的安全责任  
+• 预付卡消费纠纷  
+• 人身意外保险索赔  
+这些法律知识可能会帮到您！
+"""
+FRIENDLY_REJECTION_PROMPT=PromptTemplate(  
+    template=FRIENDLY_REJECTION_PROMPT_template,  
+    input_variables=["question"]  
+)  

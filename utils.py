@@ -6,11 +6,12 @@ from collections import defaultdict
 
 from langchain.docstore.document import Document
 from langchain.storage import LocalFileStore
-from langchain.embeddings import OpenAIEmbeddings, CacheBackedEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import SQLRecordManager, index
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain.indexes._api import _batch
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.callbacks.manager import Callbacks
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline

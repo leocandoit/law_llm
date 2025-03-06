@@ -19,7 +19,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.output_parsers import BooleanOutputParser
 from langchain.schema.runnable import RunnableMap
 from langchain.chains.base import Chain
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain_core.runnables import RunnableBranch
 from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
@@ -31,7 +31,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLamb
 from combine import combine_law_docs, combine_web_docs
 from utils import get_memory, get_model2, get_vectorstore, get_model
 from retriever import  get_multi_query_law_retiever
-from prompt import FORMAL_QUESTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT,LAW_PROMPT_HISTORY, CHECK_INTENT_PROMPT
+from prompt import FORMAL_QUESTION_PROMPT, FRIENDLY_REJECTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT,LAW_PROMPT_HISTORY, CHECK_INTENT_PROMPT
 
 
 def get_check_law_chain(config: Any) -> Chain: 
@@ -270,8 +270,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
         # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
 
         
-        # 条件分支处理（修复分支数据丢失）
-        # 条件分支处理（修复分支数据丢失）
+        # 条件分支处理
         | RunnableBranch(
             (is_law_related, 
                 RunnablePassthrough.assign(  # 保留所有上游变量
@@ -294,9 +293,10 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
             
              RunnablePassthrough.assign(
                 law_context=lambda _: "N/A",
-                answer=RunnableLambda(lambda _: "您好，我专注于法律咨询服务。") 
-                    | get_model2(callbacks=callbacks)  # 强制流式输出
-                    | StrOutputParser())
+                answer=RunnablePassthrough.assign(
+                    question = itemgetter("question")
+                )|FRIENDLY_REJECTION_PROMPT | get_model2(callbacks=callbacks) | StrOutputParser()
+             )
         )
         
         # 后续处理

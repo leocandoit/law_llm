@@ -4,7 +4,8 @@ from typing import List
 from langchain.schema.vectorstore import VectorStore
 from langchain.schema import BaseRetriever, Document
 from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.pydantic_v1 import Field, BaseModel
+from langchain.pydantic_v1 import Field
+from pydantic import BaseModel
 from langchain.output_parsers import PydanticOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.chains import LLMChain
