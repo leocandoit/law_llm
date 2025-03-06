@@ -19,9 +19,7 @@ from langchain.memory import ConversationBufferMemory
 from openai import OpenAI
 
 import os
-os.environ["OPENAI_API_KEY"] = "sk-7hBdxF3yd2FEd9r2lvMyX6tJ5X5AYZzqsYFIhwpkTRIr67PF"
 os.environ["OPENAI_API_BASE"]="https://chatapi.littlewheat.com/v1"
-os.environ["DEEPSEEK_API_KEY"] = "sk-4083677e13264b4d9eb2f4cc5914a22f"
 os.environ["DEEPSEEK_API_BASE"] = "https://api.deepseek.com/v1"
 
 

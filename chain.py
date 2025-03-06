@@ -242,8 +242,8 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
         return str(x.get("intent", "")).strip().lower() == "law"
 
     # 1. 初始化检索器
-    law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)  # 法律条文向量库
-    memory = get_memory()  # 内存向量库
+    law_vs = get_vectorstore(config.LAW_VS_COLLECTION_NAME)     # 法律条文向量库
+    memory = get_memory()                                       # 内存向量库
 
     vs_retriever = law_vs.as_retriever(search_kwargs={"k": config.LAW_VS_SEARCH_K})  # 法律检索器
     
@@ -307,11 +307,6 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
             "answer": itemgetter("answer"),
             "law_context": itemgetter("law_context")
         })
-
-
-
-
-
         
     )
 
