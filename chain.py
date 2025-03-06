@@ -267,35 +267,36 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         })
-        | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+        # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
 
         
         # 条件分支处理（修复分支数据丢失）
+        # 条件分支处理（修复分支数据丢失）
         | RunnableBranch(
-            (is_law_related, RunnablePassthrough()
-                | RunnableMap({
-                    "law_docs": itemgetter("question") | multi_query_retriver,
-                })
+            (is_law_related, 
+                RunnablePassthrough.assign(  # 保留所有上游变量
+                    law_docs = itemgetter("question") | multi_query_retriver
+                )
                 | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
-                | RunnableMap({
-                    "law_context": lambda x: combine_law_docs(x["law_docs"]) or "未找到相关法律"
-                })
-                | RunnableLambda(lambda x: print(f"[AFTER] 输出数据2: {x}") or x) #########
-                | RunnableMap({
-                    "answer": LAW_PROMPT_HISTORY | get_model2() | StrOutputParser(),
-                    "law_context": itemgetter("law_context"),
-                    "question": itemgetter("question"),
-                    "chat_history": itemgetter("chat_history")
-                })
-                | RunnableLambda(lambda x: print(f"[AFTER] 输出数据3: {x}") or x) #########
+                | RunnablePassthrough.assign(  # 添加 law_context 并保留其他字段
+                    law_context = lambda x: combine_law_docs(x["law_docs"]) or "未找到相关法律"
+                )
+                # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据2: {x}") or x)
+                | RunnablePassthrough.assign(  # 动态生成 answer 并保留所有字段
+                    answer = RunnablePassthrough.assign(
+                        chat_history = itemgetter("chat_history"),
+                        law_context = itemgetter("law_context"),
+                        question = itemgetter("question")
+                    ) | LAW_PROMPT_HISTORY | get_model2(callbacks=callbacks) | StrOutputParser()
+                )
             ),
             # 非法律分支（简化处理）
-            RunnableMap({
-                "answer": RunnableLambda(lambda _: "您好，我专注于法律咨询服务。"),
-                "law_context": RunnableLambda(lambda _: "N/A"),
-                "question": itemgetter("question"),
-                "chat_history": itemgetter("chat_history")
-            })
+            
+             RunnablePassthrough.assign(
+                law_context=lambda _: "N/A",
+                answer=RunnableLambda(lambda _: "您好，我专注于法律咨询服务。") 
+                    | get_model2(callbacks=callbacks)  # 强制流式输出
+                    | StrOutputParser())
         )
         
         # 后续处理
@@ -311,7 +312,6 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
     )
 
     return chain
-
 
 
         # # 第二步：并行检索

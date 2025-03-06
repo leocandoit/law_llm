@@ -4,13 +4,13 @@ import asyncio
 from pprint import pprint
 
 import torch
-from chain import get_formal_question_chain, get_law_chain, get_law_chain_history, get_law_chain_intent
+from chain import get_formal_question_chain, get_law_chain, get_law_chain_intent
 from config import config
 from loader import LawLoader
 from retriever import LineListOutputParser, get_multi_query_law_retiever
 from splitter import MdSplitter
 from utils import clear_vectorstore, get_model, get_record_manager, get_vectorstore, law_index
-from callback import OutCallbackHandler, OutputLogger
+from callback import OutCallbackHandler,OutputLogger
 
 #加入向量数据库
 def init_vectorstore() -> None:
@@ -39,22 +39,15 @@ async def run_shell() -> None:
     # 2. 交互循环
     while True:
         # 3. 接收用户输入
-        question = input("\n用户:")
+        question = input("\n\n❓ 用户:")
         if question.strip() == "stop":  # 退出条件
             break
 
         # 4. 检查问题是否与法律相关
-        print("\n法律小助手:", end="")
-        # is_law = check_law_chain.invoke({"question": question})
-        # if not is_law:
-            # print("不好意思，我是法律AI助手，请提问和法律有关的问题。")
-            # continue  # 跳过非法律问题
+        print("\n💡 法律小助手:", end="")
 
         # 5. 生成回答并流式输出
         task = asyncio.create_task(chain.ainvoke({"question": question}))
-
-        # 等待任务启动并开始生成输出
-        await asyncio.sleep(0)  # 确保任务进入事件循环
 
         async for new_token in out_callback.aiter():  # 逐字输出
             print(new_token, end="", flush=True)

@@ -1,4 +1,6 @@
 # coding: utf-8
+import asyncio
+from typing import Any, Dict, List
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain_core.callbacks import BaseCallbackHandler
 
@@ -10,3 +12,4 @@ class OutputLogger(BaseCallbackHandler):
         print("\n=== 模型生成结果 ===")
         print(response.generations[0][0].text)
         print("=====================")
+
