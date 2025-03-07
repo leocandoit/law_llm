@@ -1,10 +1,14 @@
-# 👨‍⚖️LawBrain/律智大模型
+# 👨‍⚖️LawBrain/法智大模型
 
 <img src="images/README/1741274436427.png" alt="1741274436427" style="zoom: 25%;" />
 
 ### 📚 法律知识 × 🧠 LLM大语言模型 × 🔍 RAG增强检索
 
 ##### 👉 最适合LLM+RAG入门实践的AI项目，零基础快速搭建智能法律顾问！
+
+*演示*
+
+![1741317268449](images/README/1741317268449.png)
 
 基于**LangChain**框架 + OpenAI/DeepSeek（需要手动添加自己的key）+ bge嵌入+ **Chroma**
 
@@ -53,7 +57,7 @@
 *2025/03/07*
 
 * [X]  降低成本，使用bge嵌入
-* [ ]  优化chain，先补全含义在进行判断
+* [X]  优化chain，先补全含义在进行判断
 
 ⭐ 如果这个项目对您有帮助，请点击右上角Star支持我们！
 

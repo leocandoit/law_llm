@@ -213,7 +213,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
                 question = itemgetter("question")
             ) | PRE_QUESTION_PROMPT | get_model_openai() | StrOutputParser()
         )
-        | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+        # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
 
         # 第二部 检查意图
         | RunnableMap({
