@@ -23,5 +23,6 @@ class Config:
     
     ABSOLUTE_PATH = Path(r"C:\models")  # 使用 Path 对象
     EMBEDDING_PATH = ABSOLUTE_PATH / "bge-large-zh-v1.5"  # 使用 / 拼接路径
+    RERANKER_PATH = ABSOLUTE_PATH / "bge-reranker-large"
 
 config = Config()

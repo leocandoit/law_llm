@@ -11,6 +11,9 @@ from retriever import LineListOutputParser, get_multi_query_law_retiever
 from splitter import MdSplitter
 from utils import clear_vectorstore, get_model_openai, get_record_manager, get_vectorstore, law_index
 from callback import OutCallbackHandler,OutputLogger
+from transformers.utils.logging import set_verbosity_error
+
+
 
 #加入向量数据库
 def init_vectorstore() -> None:
@@ -108,4 +111,5 @@ async def run_shell() -> None:
     
 if __name__=="__main__":
     # init_vectorstore()
+    set_verbosity_error()
     asyncio.run(run_shell())

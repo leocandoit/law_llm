@@ -29,7 +29,7 @@ from langchain.callbacks.manager import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLambda
 from combine import combine_law_docs, combine_web_docs
-from utils import get_memory, get_model_openai, get_vectorstore
+from utils import get_memory, get_model_openai, get_vectorstore, rerank_documents, rerank_documents_doc
 from retriever import  get_multi_query_law_retiever
 from prompt import FORMAL_QUESTION_PROMPT, FRIENDLY_REJECTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT,LAW_PROMPT_HISTORY, CHECK_INTENT_PROMPT, PRE_QUESTION_PROMPT
 
@@ -227,10 +227,15 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
         # 条件分支处理
         | RunnableBranch(
             (is_law_related, 
-                RunnablePassthrough.assign(  # 保留所有上游变量
-                    law_docs = itemgetter("question") | multi_query_retriver
-                )
-                | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
+                # RunnablePassthrough.assign(  # 保留所有上游变量
+                #     law_docs = itemgetter("question") | multi_query_retriver
+                # )
+                # | 
+                RunnableLambda(lambda x: {"law_docs": rerank_documents_doc(x["question"], initial_top_n=15, top_n=3), **x})#添加排序算法
+                # | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
+                # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+                # 需要对law_docs进行排序
+
                 | RunnablePassthrough.assign(  # 添加 law_context 并保留其他字段
                     law_context = lambda x: combine_law_docs(x["law_docs"]) or "未找到相关法律"
                 )

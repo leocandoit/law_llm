@@ -1,7 +1,7 @@
 
 ##下面这个可以
 from pprint import pprint
-from typing import List, Dict
+from typing import Any, List, Dict
 from collections import defaultdict
 
 from langchain.docstore.document import Document
@@ -18,7 +18,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain import HuggingFacePipeline
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-
+from FlagEmbedding import FlagReranker
 from langchain.memory import ConversationBufferMemory
 from openai import OpenAI
 
@@ -180,5 +180,41 @@ def delete_chroma(collection_name: str = "law",persist_directory: str = "./chrom
     # chromadb.errors.InvalidDimensionException: Embedding dimension 1024 does not match collection dimensionality 1536
     # 维度不匹配，csdn解决方法就是要么删除原来的，要么重新开一个路径
 
+
+
+
+
+def rerank_documents(question: str, initial_top_n: int = 15, top_n: int = 3) -> List[Dict[str, Any]]:
+    # 先使用向量相似搜索找到一些可能相关的文档
+    vectorstore = get_vectorstore()
+    initial_docs = vectorstore.similarity_search(question, k=initial_top_n)
+    # 将这些文档和查询语句组成一个列表，每个元素是一个包含查询和文档内容的列表
+    sentence_pairs = [[question, passage.page_content] for passage in initial_docs]
+
+    # 使用FlagReranker模型对这些文档进行重新排序;将use_fp16设置为True可以提高计算速度，但性能略有下降
+    reranker = FlagReranker(str(config.RERANKER_PATH))
+    # 计算每个文档的得分
+    scores = reranker.compute_score(sentence_pairs)
+
+    # 将得分和文档内容组成一个字典列表
+    score_document = [{"score": score, "content": content} for score, content in zip(scores, initial_docs)]
+    # 根据得分对文档进行排序，并返回前top_n个文档
+    result = sorted(score_document, key=lambda x: x['score'], reverse=True)[:top_n]
+    print(result)
+    return result
+
+def rerank_documents_doc(question: str, initial_top_n: int = 15, top_n: int = 3) -> List[Document]:
+    vectorstore = get_vectorstore()
+    initial_docs = vectorstore.similarity_search(question, k=initial_top_n)
+    sentence_pairs = [[question, passage.page_content] for passage in initial_docs]
+
+    reranker = FlagReranker(str(config.RERANKER_PATH))
+    scores = reranker.compute_score(sentence_pairs)
+
+    # 只返回文档，不返回分数
+    sorted_docs = [doc for _, doc in sorted(zip(scores, initial_docs), key=lambda x: x[0], reverse=True)[:top_n]]
+    # print(sorted_docs)
+    return sorted_docs  # 确保返回的是 List[Document]
+
 if __name__ == "__main__":
-    delete_chroma()
+    print(rerank_documents(question = "法律"))
