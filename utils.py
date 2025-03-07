@@ -10,12 +10,15 @@ from langchain.embeddings import CacheBackedEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import SQLRecordManager, index
 from langchain_chroma import Chroma
+from config import config
 from langchain.indexes._api import _batch
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.manager import Callbacks
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain import HuggingFacePipeline
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+
 from langchain.memory import ConversationBufferMemory
 from openai import OpenAI
 
@@ -54,19 +57,20 @@ def get_cached_embedder1() -> CacheBackedEmbeddings:
     return cached_embedder
 
 
-def get_embedder1():
-    from FlagEmbedding import FlagAutoModel
+def get_embedder_bge():
+    embedder=  HuggingFaceBgeEmbeddings(
+        model_name= str(config.EMBEDDING_PATH),
+        model_kwargs={"device": "cuda"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
+    return embedder
 
-    model = FlagAutoModel.from_finetuned('BAAI/bge-large-zh-v1.5',
-                                        query_instruction_for_retrieval="为这个句子生成表示以用于检索相关文章：",
-                                        use_fp16=True)
-    return model
 
 # 创建并返回一个Chroma向量数据库
 def get_vectorstore(collection_name: str = "law") -> Chroma:
     vectorstore = Chroma(
         persist_directory="./chroma_db",        # 持久化存储目录
-        embedding_function=get_embedder(),      # 嵌入模型
+        embedding_function=get_embedder_bge(),      # 嵌入模型
         collection_name=collection_name)        # 集合名称 数据库的表
 
     return vectorstore
@@ -163,7 +167,18 @@ def get_memory() -> ConversationBufferMemory:
     )
 
 
+def delete_chroma(collection_name: str = "law",persist_directory: str = "./chroma_db"):
+    vectorstore = Chroma(collection_name=collection_name, persist_directory=persist_directory)
+    
+    # 删除集合
+    vectorstore.delete_collection()
+    print(f"Collection '{collection_name}' deleted successfully.")
+    
+
+    # 删除集合
+    # 因为如果用bge会出现这个问题
+    # chromadb.errors.InvalidDimensionException: Embedding dimension 1024 does not match collection dimensionality 1536
+    # 维度不匹配，csdn解决方法就是要么删除原来的，要么重新开一个路径
+
 if __name__ == "__main__":
-    model = get_model_openai()
-    ans = model.invoke("你好你是谁 是openai还是deepseek")
-    print(ans)
+    delete_chroma()
