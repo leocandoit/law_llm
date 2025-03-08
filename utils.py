@@ -207,12 +207,14 @@ def rerank_documents_doc(question: str, initial_top_n: int = 15, top_n: int = 3)
     vectorstore = get_vectorstore()
     initial_docs = vectorstore.similarity_search(question, k=initial_top_n)
     sentence_pairs = [[question, passage.page_content] for passage in initial_docs]
-
+    # print("检索内容：")
+    # print(sentence_pairs)
     reranker = FlagReranker(str(config.RERANKER_PATH))
     scores = reranker.compute_score(sentence_pairs)
 
     # 只返回文档，不返回分数
     sorted_docs = [doc for _, doc in sorted(zip(scores, initial_docs), key=lambda x: x[0], reverse=True)[:top_n]]
+    # print("排序后：")
     # print(sorted_docs)
     return sorted_docs  # 确保返回的是 List[Document]
 

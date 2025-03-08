@@ -1,10 +1,13 @@
 # 👨‍⚖️LawBrain/法智大模型
 
-<img src="images/README/1741274436427.png" alt="1741274436427" style="zoom: 25%;" />
-
 ### 📚 法律知识 × 🧠 LLM大语言模型 × 🔍 RAG增强检索
 
 ##### 👉 最适合LLM+RAG入门实践的AI项目，零基础快速搭建智能法律顾问！
+
+希望能够帮助你入门RAG！有问题欢迎进行提问！如果帮助到你的话可以点一个star⭐ 感谢
+
+<img src="images/README/1741274436427.png" alt="1741274436427" style="zoom: 25%;" />
+
 
 *演示*
 
