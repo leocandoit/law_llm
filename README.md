@@ -8,7 +8,7 @@
 
 *演示*
 
-![1741317268449](images/README/1741317268449.png)
+![1741412004042](images/README/1741412004042.png)
 
 基于**LangChain**框架 + OpenAI/DeepSeek（需要手动添加自己的key）+ bge嵌入+ **Chroma**
 
