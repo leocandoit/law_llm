@@ -4,6 +4,9 @@ import json
 from operator import itemgetter
 import os
 from typing import Any, Dict, List
+
+from bs4 import BeautifulSoup
+import requests
 from callback import OutCallbackHandler
 from chain import get_law_chain_intent
 from combine import combine_law_docs
@@ -344,7 +347,42 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
 
     return chain
 
-
+def search_web(keywords, region='cn-zh', max_results=3):
+    # 百度搜索 URL
+    url = "https://www.baidu.com/s"
+    # 请求参数：wd 为搜索关键词
+    params = {'wd': keywords}
+    # 设置请求头，模拟浏览器访问
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' \
+                      'AppleWebKit/537.36 (KHTML, like Gecko) ' \
+                      'Chrome/90.0.4430.93 Safari/537.36'
+    }
+    
+    response = requests.get(url, params=params, headers=headers)
+    # 如果请求失败，可直接返回空字符串或报错
+    if response.status_code != 200:
+        return ""
+    print(response.text)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # 提取搜索结果
+    # 百度搜索结果通常包含在 class 为 'result c-container' 或 'result-op' 的 div 中
+    results = soup.find_all('div', class_='result c-container', limit=max_results)
+    if not results:
+        results = soup.find_all('div', class_='result-op', limit=max_results)
+    
+    web_content = ""
+    for r in results:
+        # 尝试获取摘要文本，有的结果可能在 <div class="c-abstract">
+        abstract = r.find('div', class_='c-abstract')
+        if abstract:
+            snippet = abstract.get_text(separator="\n", strip=True)
+        else:
+            snippet = r.get_text(separator="\n", strip=True)
+        web_content += snippet + "\n\n"
+    
+    return web_content
 
 if __name__ == "__main__":
-    asyncio.run(run_shell1())
+    print(search_web("如何学python"))
