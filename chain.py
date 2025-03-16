@@ -29,13 +29,13 @@ from langchain.callbacks.manager import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLambda
 from combine import combine_law_docs, combine_web_docs
-from utils import get_memory, get_model_openai, get_vectorstore, rerank_documents, rerank_documents_doc
+from utils import get_memory, get_model_qwen, get_vectorstore, rerank_documents, rerank_documents_doc
 from retriever import  get_multi_query_law_retiever
 from prompt import FORMAL_QUESTION_PROMPT, FRIENDLY_REJECTION_PROMPT, LAW_PROMPT, CHECK_LAW_PROMPT, HYPO_QUESTION_PROMPT,LAW_PROMPT_HISTORY, CHECK_INTENT_PROMPT, PRE_QUESTION_PROMPT
 
 
 def get_check_law_chain(config: Any) -> Chain: 
-    model = get_model_openai()                                             # 获取语言模型
+    model = get_model_qwen()                                             # 获取语言模型
 
     check_chain = CHECK_LAW_PROMPT | model | BooleanOutputParser()  # 构建链式处理流程
     # CHECK_LAW_PROMPT 将用户输入的问题格式化为指定模板的文本 输出：格式化的字符串
@@ -64,7 +64,7 @@ class DebuggableModel(Runnable):
         
         return output
 def get_check_law_chain1(config: Any) -> Chain:
-    model = get_model_openai()
+    model = get_model_qwen()
     
     # 包装可调试模型
     debuggable_model = DebuggableModel(model, debug=True)  # 调试开关
@@ -80,7 +80,7 @@ def get_check_law_chain1(config: Any) -> Chain:
 
 
 def get_formal_question_chain(config:Any) -> Chain:
-    model = get_model_openai()
+    model = get_model_qwen()
     formal_chain = FORMAL_QUESTION_PROMPT | model | StrOutputParser() 
     return formal_chain
 
@@ -97,7 +97,7 @@ def get_law_chain_history(config: Any, out_callback: AsyncIteratorCallbackHandle
  
 
     # 2. 多查询法律检索器（优化法律条文检索效果）
-    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_openai())
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_qwen())
 
     # 3. 回调函数配置（用于流式输出）
     callbacks = [out_callback] if out_callback else []
@@ -125,7 +125,7 @@ def get_law_chain_history(config: Any, out_callback: AsyncIteratorCallbackHandle
 
         # 第四步：生成回答，同时保留 law_context
         | {
-            "answer": LAW_PROMPT_HISTORY | get_model_openai(callbacks=callbacks) | StrOutputParser(),
+            "answer": LAW_PROMPT_HISTORY | get_model_qwen(callbacks=callbacks) | StrOutputParser(),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history"),
             "law_context": itemgetter("law_context")
@@ -148,7 +148,7 @@ def get_law_chain_history(config: Any, out_callback: AsyncIteratorCallbackHandle
 
 def get_hypo_questions_chain(config: Any, callbacks=None) -> Chain:
     # 获取语言模型，支持回调
-    model = get_model_openai(callbacks=callbacks)
+    model = get_model_qwen(callbacks=callbacks)
 
     # 定义函数调用配置
     functions = [
@@ -196,7 +196,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
     
 
     # 2. 多查询法律检索器（优化法律条文检索效果）
-    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_openai())
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_qwen())
 
     # 3. 回调函数配置（用于流式输出）
     callbacks = [out_callback] if out_callback else []
@@ -211,17 +211,17 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
             question = RunnablePassthrough.assign(
                 chat_history = itemgetter("chat_history"),
                 question = itemgetter("question")
-            ) | PRE_QUESTION_PROMPT | get_model_openai() | StrOutputParser()
+            ) | PRE_QUESTION_PROMPT | get_model_qwen() | StrOutputParser()
         )
-        # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+        | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
 
         # 第二部 检查意图
         | RunnableMap({
-            "intent":CHECK_INTENT_PROMPT | get_model_openai()|StrOutputParser(),
+            "intent":CHECK_INTENT_PROMPT | get_model_qwen()|StrOutputParser(),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         })
-        # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+        | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
 
         
         # 条件分支处理
@@ -232,8 +232,8 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
                 # )
                 # | 
                 RunnableLambda(lambda x: {"law_docs": rerank_documents_doc(x["question"], initial_top_n=15, top_n=3), **x})#添加排序算法
-                # | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
-                # | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
+                | RunnableLambda(lambda x: print(f" 检索到法律条文: {len(x['law_docs'])}条") or x)
+                | RunnableLambda(lambda x: print(f"[AFTER] 输出数据1: {x}") or x)###############
                 # 需要对law_docs进行排序
 
                 | RunnablePassthrough.assign(  # 添加 law_context 并保留其他字段
@@ -245,7 +245,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
                         chat_history = itemgetter("chat_history"),
                         law_context = itemgetter("law_context"),
                         question = itemgetter("question")
-                    ) | LAW_PROMPT_HISTORY | get_model_openai(callbacks=callbacks) | StrOutputParser()
+                    ) | LAW_PROMPT_HISTORY | get_model_qwen(callbacks=callbacks) | StrOutputParser()
                 )
             ),
             # 非法律分支（简化处理）
@@ -254,7 +254,7 @@ def get_law_chain_intent(config: Any, out_callback: AsyncIteratorCallbackHandler
                 law_context=lambda _: "N/A",
                 answer=RunnablePassthrough.assign(
                     question = itemgetter("question")
-                )|FRIENDLY_REJECTION_PROMPT | get_model_openai(callbacks=callbacks) | StrOutputParser()
+                )|FRIENDLY_REJECTION_PROMPT | get_model_qwen(callbacks=callbacks) | StrOutputParser()
              )
         )
         
@@ -285,7 +285,7 @@ def get_law_chain(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Ch
     # )
 
     # 2. 多查询法律检索器（优化法律条文检索效果）
-    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_openai())
+    multi_query_retriver = get_multi_query_law_retiever(vs_retriever, get_model_qwen())
 
     # 3. 回调函数配置（用于流式输出）
     callbacks = [out_callback] if out_callback else []
@@ -321,7 +321,7 @@ def get_law_chain(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Ch
             # "web_docs": lambda x: x["web_docs"],      # 传递网页文档
             "law_context": lambda x: x["law_context"],# 传递法律上下文
             # "web_context": lambda x: x["web_context"],# 传递网页上下文
-            "answer": itemgetter("prompt") | get_model_openai(callbacks=callbacks) | StrOutputParser()  # 生成回答
+            "answer": itemgetter("prompt") | get_model_qwen(callbacks=callbacks) | StrOutputParser()  # 生成回答
         })
     )
     # print("检索完成")
@@ -344,7 +344,7 @@ def get_law_chain(config: Any, out_callback: AsyncIteratorCallbackHandler) -> Ch
 
         # # 第四步：生成回答，同时保留 law_context
         # | {
-        #     "answer": LAW_PROMPT_HISTORY | get_model_openai(callbacks=callbacks) | StrOutputParser(),
+        #     "answer": LAW_PROMPT_HISTORY | get_model_qwen(callbacks=callbacks) | StrOutputParser(),
         #     "question": itemgetter("question"),
         #     "chat_history": itemgetter("chat_history"),
         #     "law_context": itemgetter("law_context")

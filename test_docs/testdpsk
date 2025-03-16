@@ -1,0 +1,12 @@
+import requests
+
+response = requests.post(
+    url="http://211.87.232.46:11434/api/generate",
+    json={
+        "model": "deepseek-r1:32b",
+        "prompt": "为什么天空是蓝色的？",
+        "stream": True  # 设为 True 可启用流式响应
+    }
+)
+
+print(response.json()["response"])

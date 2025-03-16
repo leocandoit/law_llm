@@ -23,18 +23,23 @@ from langchain.memory import ConversationBufferMemory
 from openai import OpenAI
 
 import os
+
 os.environ["OPENAI_API_BASE"]="https://chatapi.littlewheat.com/v1"
 os.environ["DEEPSEEK_API_BASE"] = "https://api.deepseek.com/v1"
+def get_model(callbacks: Callbacks = None):
+    return get_model_qwen(Callbacks)
 
+def  get_embeder():
+    return get_embedder_bge()
 
-def get_embedder() -> CacheBackedEmbeddings:
-    fs = LocalFileStore("./.cache/embeddings")
-    underlying_embeddings = OpenAIEmbeddings()
+# def get_embedder() -> CacheBackedEmbeddings:
+#     fs = LocalFileStore("./.cache/embeddings")
+#     underlying_embeddings = OpenAIEmbeddings()
     
-    cached_embedder = CacheBackedEmbeddings.from_bytes_store(
-        underlying_embeddings, fs, namespace=underlying_embeddings.model
-    )
-    return cached_embedder
+#     cached_embedder = CacheBackedEmbeddings.from_bytes_store(
+#         underlying_embeddings, fs, namespace=underlying_embeddings.model
+#     )
+#     return cached_embedder
 
 #这是通过缓存机制加速处理过程的embedder 最初是用在openai的模型上（上面那个），不知道能不能用在bge上 所以有点问题
 def get_cached_embedder1() -> CacheBackedEmbeddings:
@@ -70,7 +75,7 @@ def get_embedder_bge():
 def get_vectorstore(collection_name: str = "law") -> Chroma:
     vectorstore = Chroma(
         persist_directory="./chroma_db",        # 持久化存储目录
-        embedding_function=get_embedder_bge(),      # 嵌入模型
+        embedding_function=get_embeder(),      # 嵌入模型
         collection_name=collection_name)        # 集合名称 数据库的表
 
     return vectorstore
@@ -133,13 +138,13 @@ def get_model_openai(
 
 
 def get_model_qwen(callbacks: Callbacks = None):
-    tokenizer = AutoTokenizer.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-0.5B-Instruct', device_map="cuda", trust_remote_code=True).eval()
+    tokenizer = AutoTokenizer.from_pretrained('C:\models\Qwen2.5-3B-Instruct', trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained('C:\models\Qwen2.5-3B-Instruct', device_map="cuda", trust_remote_code=True).eval()
     pipe1 = pipeline(
-        "text2text-generation",
+        "text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_length=512,
+        max_length=4096,
         temperature=0.8,
         top_p=0.6,
         repetition_penalty=1.5)

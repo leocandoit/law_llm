@@ -25,4 +25,6 @@ class Config:
     EMBEDDING_PATH = ABSOLUTE_PATH / "bge-large-zh-v1.5"  # 使用 / 拼接路径
     RERANKER_PATH = ABSOLUTE_PATH / "bge-reranker-v2-m3"
 
+    
+
 config = Config()
